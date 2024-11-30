@@ -1,6 +1,6 @@
 "use client"
 
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Button } from '@/components/ui/button'
@@ -8,34 +8,50 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { ProductPreviewModal } from '@/components/product-preview-modal'
 import { Input } from '@/components/ui/input'
 import { Search } from 'lucide-react'
+import { Product } from '@/types'
+import { Skeleton } from '@/components/ui/skeleton'
 
 const providers = ['Deliworld']
-const mockProducts = Array(20).fill(null).map((_, i) => ({
-    id: i + 1,
-    image: `/placeholder.svg?height=50&width=50`,
-    name: `Product ${i + 1}`,
-    createdDate: new Date(Date.now() - Math.random() * 10000000000).toISOString().split('T')[0],
-    price: (Math.random() * 100).toFixed(2),
-    quantity: Math.floor(Math.random() * 100),
-}))
+
 
 export function ImportProductModal({ isOpen, onClose }: { isOpen: boolean; onClose: any }) {
     const [selectedProvider, setSelectedProvider] = useState<string | undefined>()
     const [currentPage, setCurrentPage] = useState(1)
-    const [selectedProduct, setSelectedProduct] = useState<typeof mockProducts[0] | null>(null)
-    const [selectedProductId, setSelectedProductId] = useState<number | null>(null)
+    const [selectedProduct, setSelectedProduct] = useState<Product | null>(null)
+    const [selectedProductId, setSelectedProductId] = useState<string | null>(null)
     const [searchQuery, setSearchQuery] = useState('')
+    const [products, setProducts] = useState<Product[]>([])
+    const [loading, setLoading] = useState(false)
 
-    const productsPerPage = 5
-    const filteredProducts = mockProducts.filter(product =>
-        product.name.toLowerCase().includes(searchQuery.toLowerCase())
+    const getList = async () => {
+        setLoading(true)
+        const response = await fetch('/api/products', {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+        })
+        const data = await response.json()
+        setProducts(data.response.Data.ProductList)
+        setLoading(false)
+        return data
+    }
+
+
+    useEffect(() => {
+        getList()
+    }, [selectedProvider])
+
+    const productsPerPage = 10
+    const filteredProducts = products.filter(product =>
+        product.new_product_name.toLowerCase().includes(searchQuery.toLowerCase())
     )
     const totalPages = Math.ceil(filteredProducts.length / productsPerPage)
 
     const handleImport = () => {
-        const productToImport = mockProducts.find(p => p.id === selectedProductId)
+        const productToImport = products.find(p => p.new_product_id === selectedProductId)
         if (productToImport) {
-            onClose(productToImport)
+            onClose(productToImport) // Pass the product details to the onClose callback
         }
     }
 
@@ -69,46 +85,75 @@ export function ImportProductModal({ isOpen, onClose }: { isOpen: boolean; onClo
                                 />
                             </div>
 
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                        <TableHead>Select</TableHead>
-                                        <TableHead>Image</TableHead>
-                                        <TableHead>Name</TableHead>
-                                        <TableHead>Created Date</TableHead>
-                                        <TableHead>Price</TableHead>
-                                        <TableHead>Quantity</TableHead>
-                                        <TableHead></TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {filteredProducts
-                                        .slice((currentPage - 1) * productsPerPage, currentPage * productsPerPage)
-                                        .map((product) => (
-                                            <TableRow key={product.id}>
-                                                <TableCell>
-                                                    <input
-                                                        type="radio"
-                                                        name="productSelection"
-                                                        checked={selectedProductId === product.id}
-                                                        onChange={() => setSelectedProductId(product.id)}
-                                                        className="form-radio h-4 w-4 text-primary border-gray-300 focus:ring-primary"
-                                                    />
-                                                </TableCell>
-                                                <TableCell>
-                                                    <img src={product.image} alt={product.name} className="w-10 h-10 object-cover rounded-md" />
-                                                </TableCell>
-                                                <TableCell>{product.name}</TableCell>
-                                                <TableCell>{product.createdDate}</TableCell>
-                                                <TableCell>${product.price}</TableCell>
-                                                <TableCell>{product.quantity}</TableCell>
-                                                <TableCell>
-                                                    <Button variant="ghost" onClick={() => setSelectedProduct(product)}>Preview</Button>
-                                                </TableCell>
+                            {loading ? (
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Select</TableHead>
+                                            <TableHead>Image</TableHead>
+                                            <TableHead>Name</TableHead>
+                                            <TableHead>Product Number</TableHead>
+                                            <TableHead>Price</TableHead>
+                                            <TableHead>Quantity</TableHead>
+                                            <TableHead></TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {[...Array(productsPerPage)].map((_, index) => (
+                                            <TableRow key={index}>
+                                                <TableCell><Skeleton className="h-4 w-4" /></TableCell>
+                                                <TableCell><Skeleton className="w-10 h-10" /></TableCell>
+                                                <TableCell><Skeleton className="h-4 w-32" /></TableCell>
+                                                <TableCell><Skeleton className="h-4 w-24" /></TableCell>
+                                                <TableCell><Skeleton className="h-4 w-16" /></TableCell>
+                                                <TableCell><Skeleton className="h-4 w-12" /></TableCell>
+                                                <TableCell><Skeleton className="h-4 w-16" /></TableCell>
                                             </TableRow>
                                         ))}
-                                </TableBody>
-                            </Table>
+                                    </TableBody>
+                                </Table>
+                            ) : (
+                                <Table>
+                                    <TableHeader>
+                                        <TableRow>
+                                            <TableHead>Select</TableHead>
+                                            <TableHead>Image</TableHead>
+                                            <TableHead>Name</TableHead>
+                                            <TableHead>Product Number</TableHead>
+                                            <TableHead>Price</TableHead>
+                                            <TableHead>Quantity</TableHead>
+                                            <TableHead></TableHead>
+                                        </TableRow>
+                                    </TableHeader>
+                                    <TableBody>
+                                        {filteredProducts
+                                            .slice((currentPage - 1) * productsPerPage, currentPage * productsPerPage)
+                                            .map((product) => (
+                                                <TableRow key={product.new_product_id}>
+                                                    <TableCell>
+                                                        <input
+                                                            type="radio"
+                                                            name="productSelection"
+                                                            checked={selectedProductId === product.new_product_id}
+                                                            onChange={() => setSelectedProductId(product.new_product_id)}
+                                                            className="form-radio h-4 w-4 text-primary border-gray-300 focus:ring-primary"
+                                                        />
+                                                    </TableCell>
+                                                    <TableCell>
+                                                        <img src={product.new_productimage} alt={product.new_productimage} className="w-10 h-10 object-cover rounded-md" />
+                                                    </TableCell>
+                                                    <TableCell>{product.new_product_name}</TableCell>
+                                                    <TableCell>{product.productNumber}</TableCell>
+                                                    <TableCell>${product.new_standard_price}</TableCell>
+                                                    <TableCell>{product.new_qty}</TableCell>
+                                                    <TableCell>
+                                                        <Button variant="ghost" onClick={() => setSelectedProduct(product)}>Preview</Button>
+                                                    </TableCell>
+                                                </TableRow>
+                                            ))}
+                                    </TableBody>
+                                </Table>
+                            )}
 
                             <div className="flex justify-between items-center">
                                 <Button

@@ -1,96 +1,208 @@
 "use client"
+
 import { useState } from "react"
+import { motion, AnimatePresence } from "framer-motion"
 import { Heading } from "@/components/ui/heading"
 import { Button } from "@/components/ui/button"
-import { Select, SelectItem, SelectContent, SelectTrigger, SelectValue } from "@/components/ui/select"
-import { Dialog, DialogTrigger, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { Input } from "@/components/ui/input"
+import { Label } from "@/components/ui/label"
+import { Dialog, DialogContent, DialogHeader, DialogFooter, DialogTitle, DialogDescription } from "@/components/ui/dialog"
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
+import { ProviderCard } from "@/components/provider-card"
+import { Textarea } from "@/components/ui/textarea"
 
-const providers = [
-    { name: "Provider 1", apiKey: "API_KEY_1" },
-    { name: "Provider 2", apiKey: "API_KEY_2" },
+interface Provider {
+    id: string;
+    name: string;
+    authType: 'api' | 'credentials';
+    description: string;
+}
+
+interface ProviderConfig {
+    apiKey?: string;
+    username?: string;
+    password?: string;
+}
+
+const availableProviders: Provider[] = [
+    {
+        id: "1",
+        name: "Deliworld",
+        authType: "credentials",
+        description: "Deliworld integration for order management"
+    },
+    {
+        id: "2",
+        name: "Shopify",
+        authType: "api",
+        description: "Shopify integration for e-commerce"
+    }
+]
+
+const initialProviders: (Provider & ProviderConfig)[] = [
+    {
+        ...availableProviders[0],
+        username: "deliworld_user",
+        password: "********"
+    }
 ]
 
 export default function ProvidersSettingsPage() {
     const [isModalOpen, setIsModalOpen] = useState(false)
-    const [selectedProvider, setSelectedProvider] = useState("")
-    const [apiKeyVisible, setApiKeyVisible] = useState(false)
-    const [editProvider, setEditProvider] = useState(null)
+    const [providers, setProviders] = useState<(Provider & ProviderConfig)[]>(initialProviders)
+    const [selectedProvider, setSelectedProvider] = useState<Provider | null>(null)
+    const [newProviderConfig, setNewProviderConfig] = useState<ProviderConfig>({})
 
     const handleAddProvider = () => {
-        setSelectedProvider("")
-        setEditProvider(null)
+        setSelectedProvider(null)
+        setNewProviderConfig({})
         setIsModalOpen(true)
     }
 
-    const handleEditProvider = (provider: any) => {
-        setSelectedProvider(provider.name)
-        setEditProvider(provider)
+    const handleEditProvider = (provider: Provider & ProviderConfig) => {
+        setSelectedProvider(provider)
+        setNewProviderConfig({
+            apiKey: provider.apiKey,
+            username: provider.username,
+            password: provider.password
+        })
         setIsModalOpen(true)
     }
 
     const handleSaveProvider = () => {
-        // Save provider logic here
+        if (selectedProvider) {
+            setProviders(providers.map(p =>
+                p.id === selectedProvider.id ? { ...p, ...newProviderConfig } : p
+            ))
+        } else {
+            setProviders([...providers, { ...selectedProvider!, ...newProviderConfig }])
+        }
         setIsModalOpen(false)
     }
 
     return (
-        <div className="container mx-auto py-10">
-            <Heading title="Providers Settings" description="Add API keys for providers" />
-            <div className="space-y-6">
-                {providers.map((provider, index) => (
-                    <div key={index} className="p-4 border border-gray-300 rounded-md shadow-sm flex justify-between items-center">
-                        <div>
-                            <span className="font-medium">{provider.name}</span>
-                            <div className="flex items-center space-x-2">
-                                <span>{apiKeyVisible ? provider.apiKey : "••••••••••••"}</span>
-                                <button onClick={() => setApiKeyVisible(!apiKeyVisible)}>
-                                </button>
+        <motion.div
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            transition={{ duration: 0.5 }}
+            className="container mx-auto py-10"
+        >
+            <Heading title="Providers Settings" description="Manage your provider integrations" />
+            <div className="space-y-6 mt-6">
+                <AnimatePresence>
+                    {providers.map((provider) => (
+                        <ProviderCard
+                            key={provider.id}
+                            provider={provider}
+                            onEdit={handleEditProvider}
+                        />
+                    ))}
+                </AnimatePresence>
+                <Button onClick={handleAddProvider}>Add New Provider</Button>
+            </div>
+
+            <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
+                <DialogContent className="sm:max-w-[425px]">
+                    <DialogHeader>
+                        <DialogTitle>{selectedProvider ? "Edit Provider" : "Add New Provider"}</DialogTitle>
+                        <DialogDescription>
+                            {selectedProvider ? "Edit the provider details below." : "Select a provider and enter the required details."}
+                        </DialogDescription>
+                    </DialogHeader>
+                    <div className="grid gap-4 py-4">
+                        {!selectedProvider && (
+                            <div className="grid grid-cols-4 items-center gap-4">
+                                <Label htmlFor="provider" className="text-right">
+                                    Provider
+                                </Label>
+                                <Select onValueChange={(value) => setSelectedProvider(availableProviders.find(p => p.id === value) || null)}>
+                                    <SelectTrigger className="col-span-3">
+                                        <SelectValue placeholder="Select a provider" />
+                                    </SelectTrigger>
+                                    <SelectContent>
+                                        {availableProviders.map((provider) => (
+                                            <SelectItem key={provider.id} value={provider.id}>
+                                                {provider.name}
+                                            </SelectItem>
+                                        ))}
+                                    </SelectContent>
+                                </Select>
                             </div>
-                        </div>
-                        <Button onClick={() => handleEditProvider(provider)}>Edit</Button>
-                    </div>
-                ))}
-                <Dialog open={isModalOpen} onOpenChange={setIsModalOpen}>
-                    <DialogTrigger asChild>
-                        <Button onClick={handleAddProvider}>Add New Provider</Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                        <DialogHeader>
-                            <DialogTitle>{editProvider ? "Edit Provider" : "Add New Provider"}</DialogTitle>
-                            <DialogDescription>
-                                <div className="mt-4">
-
-                                    <Select onValueChange={setSelectedProvider}>
-                                        <SelectTrigger>
-                                            <SelectValue placeholder="Select a provider" />
-                                        </SelectTrigger>
-                                        <SelectContent>
-                                            <SelectItem value="Provider 1">Provider 1</SelectItem>
-                                            <SelectItem value="Provider 2">Provider 2</SelectItem>
-                                        </SelectContent>
-                                    </Select>
-
-
-                                </div>
-                                <div className="mt-4">
-                                    <label htmlFor="api-key" className="block text-sm font-medium text-gray-700">
-                                        API Key
-                                    </label>
-                                    <input
-                                        type="text"
-                                        name="api-key"
-                                        id="api-key"
-                                        className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm py-2 px-3 focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+                        )}
+                        {selectedProvider && (
+                            <>
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="name" className="text-right">
+                                        Name
+                                    </Label>
+                                    <Input
+                                        id="name"
+                                        value={selectedProvider.name}
+                                        className="col-span-3"
+                                        disabled
                                     />
                                 </div>
-                            </DialogDescription>
-                        </DialogHeader>
-                        <DialogFooter>
-                            <Button onClick={handleSaveProvider}>Save</Button>
-                        </DialogFooter>
-                    </DialogContent>
-                </Dialog>
-            </div>
-        </div>
+                                <div className="grid grid-cols-4 items-center gap-4">
+                                    <Label htmlFor="description" className="text-right">
+                                        Description
+                                    </Label>
+                                    <Textarea
+                                        id="description"
+                                        value={selectedProvider.description}
+                                        className="col-span-3"
+                                        disabled
+                                    />
+                                </div>
+                                {selectedProvider.authType === 'api' ? (
+                                    <div className="grid grid-cols-4 items-center gap-4">
+                                        <Label htmlFor="apiKey" className="text-right">
+                                            API Key
+                                        </Label>
+                                        <Input
+                                            id="apiKey"
+                                            type="password"
+                                            value={newProviderConfig.apiKey || ''}
+                                            onChange={(e) => setNewProviderConfig({ ...newProviderConfig, apiKey: e.target.value })}
+                                            className="col-span-3"
+                                        />
+                                    </div>
+                                ) : (
+                                    <>
+                                        <div className="grid grid-cols-4 items-center gap-4">
+                                            <Label htmlFor="username" className="text-right">
+                                                Username
+                                            </Label>
+                                            <Input
+                                                id="username"
+                                                value={newProviderConfig.username || ''}
+                                                onChange={(e) => setNewProviderConfig({ ...newProviderConfig, username: e.target.value })}
+                                                className="col-span-3"
+                                            />
+                                        </div>
+                                        <div className="grid grid-cols-4 items-center gap-4">
+                                            <Label htmlFor="password" className="text-right">
+                                                Password
+                                            </Label>
+                                            <Input
+                                                id="password"
+                                                type="password"
+                                                value={newProviderConfig.password || ''}
+                                                onChange={(e) => setNewProviderConfig({ ...newProviderConfig, password: e.target.value })}
+                                                className="col-span-3"
+                                            />
+                                        </div>
+                                    </>
+                                )}
+                            </>
+                        )}
+                    </div>
+                    <DialogFooter>
+                        <Button onClick={() => setIsModalOpen(false)} variant="outline">Cancel</Button>
+                        <Button onClick={handleSaveProvider} disabled={!selectedProvider}>Save</Button>
+                    </DialogFooter>
+                </DialogContent>
+            </Dialog>
+        </motion.div>
     )
 }
+
