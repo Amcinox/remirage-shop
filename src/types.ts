@@ -1,0 +1,64 @@
+export interface Product {
+    new_price_typename?: string | null;
+    productNumber: string;
+    new_product_id: string;
+    new_product_name: string;
+    new_description?: string | null;
+    new_delino: string;
+    new_customerno?: string | null;
+    single_asst?: string | null;
+    sales_pk?: string | null;
+    new_packagingunit?: string | null;
+    new_uom_id?: string | null;
+    new_uom_name?: string | null;
+    new_standard_price: number;
+    new_paterialpackaging_id?: string | null;
+    new_paterialpackaging_idName?: string | null;
+    new_commoditybar?: string | null;
+    new_outsize?: string | null;
+    new_englishspecifications?: string | null;
+    new_englishcolor?: string | null;
+    new_material?: string | null;
+    price: number;
+    new_englishdescribe?: string | null;
+    new_price_type: number;
+    new_organization_id?: string | null;
+    new_organization_name?: string | null;
+    new_channel_id?: string | null;
+    new_channel_name?: string | null;
+    new_productimage: string;
+    new_qty: number;
+    IsProPrice: boolean;
+    new_ord_proprice_apply_id?: string | null;
+    productsign?: string | null;
+    currencysymbol?: string | null;
+    new_extattrs?: string | null;
+    PolicyList?: string | null;
+    uomList: UOM[];
+    policytypeList?: string | null;
+    defautValue: number;
+    new_label?: string | null;
+    islove: boolean;
+    isbuy: boolean;
+    isShowStock: number;
+    new_chinesem_iddle?: string | null;
+    new_englishcategory?: string | null;
+    new_pictureqty: number;
+    product_type: string;
+    new_producttype_id: string;
+    groupid9370: string;
+    groupid9161?: string | null;
+}
+
+export interface UOM {
+    value: number;
+    Id: string;
+    Name: string;
+    cName?: string | null;
+    uomid: string;
+    new_qty: number;
+    new_packing_uom: string;
+    new_volume: string;
+    new_netweight: string;
+    new_grossweight: string;
+}
